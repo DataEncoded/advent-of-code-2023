@@ -1,5 +1,3 @@
-// TIHS WAS OFF BY 2, DON'T KNOW WHY!!!
-
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -7,15 +5,14 @@
 using namespace std;
 
 // Create a constant map of replacements
-const unordered_map<string, string> REPLACEMENTS = {{"one", "1"}, {"two", "2"}, {"three", "3"}, {"four", "4"}, {"five", "5"}, {"six", "6"}, {"seven", "7"}, {"eight", "8"}, {"nine", "9"}};
+const unordered_map<string, int> REPLACEMENTS = {{"one", 1}, {"two", 2}, {"three", 3}, {"four", 4}, {"five", 5}, {"six", 6}, {"seven", 7}, {"eight", 8}, {"nine", 9}};
 
-void replaceNumbers(string*);
+int checkForReplacements(string*, int);
 
 int main()
 {
     // Get data from file
     ifstream myData = ifstream("myData.txt");
-    ofstream myWrite = ofstream("myWritten.txt", ofstream::out);
 
     string lineData = "";
 
@@ -32,14 +29,11 @@ int main()
         int firstNumber = -1;
         int lastNumber = -1; 
 
-        // Run the function to replace all strings with numbers on the fly
-        replaceNumbers(&lineData);
-
-        myWrite << lineData << endl;
-
         // Loop through string looking for numbers
-        for (char character: lineData)
+        for (int i = 0; i < lineData.size(); i++)
         {
+            // Set the current character
+            char character = lineData.at(i);
             // Verify current is character
             if (isdigit(character))
             {
@@ -50,6 +44,20 @@ int main()
                 }
                 // Now run the lastNumber instead of firstNumber
                 lastNumber = character - 48;
+            } else 
+            {
+                // Digit wasn't found, attempt to search spelled out number
+                int spelledOut = checkForReplacements(&lineData, i);
+                if (spelledOut > -1)
+                {
+                if (firstNumber == -1)
+                {
+                    // Subtract 48 from character to convert to 0-9
+                    firstNumber = spelledOut;
+                }
+                // Now run the lastNumber instead of firstNumber
+                lastNumber = spelledOut;
+                }
             }
         }
 
@@ -68,38 +76,25 @@ int main()
 }
 
 
-// Function that takes in a pointer to a string, and goes in order trying to replace 
-// the first occurance of a number spelled out, and replaces it. Then recursion happens
-void replaceNumbers(string *s)
+// Function that takes in a pointer to a string, a position, and a sizem then returns
+// a number if the current string is a spelled out number, or -1 if no number exists
+int checkForReplacements(string *s, int position)
 {
-    // Create a holder to ensure the first values are taken in a string
-    int holderPosition = 999;
-    int holderSize = 0;
-    string holderValue = "";
+    // Create a new string that substringed to position
+    string newString = s->substr(position);
 
-    // Use a loop to get each string of replacement
-    for (auto replacement: REPLACEMENTS)
-    {
-        // Find if a replacement exists in a string
-        int replacementPositionFirst = s->find(replacement.first);
-        if (replacementPositionFirst > -1 && replacementPositionFirst < holderPosition)
+    // Loop over REPLACEMENTS map
+    for (auto &replacement: REPLACEMENTS)
+    {  
+        // Create a comparison variable that uses strncmp
+        int comparison = strncmp(newString.c_str(), replacement.first.c_str(), replacement.first.size());
+        if (comparison == 0)
         {
-            // Smallest value found so far, update data held
-            holderPosition = replacementPositionFirst;
-            holderSize = replacement.first.size();
-            holderValue = replacement.second;
+            // The string was found
+            return replacement.second;
         }
     }
 
-    if (holderPosition != 999)
-    {
-        // New number to replace was found
-        s->replace(holderPosition, holderSize, holderValue);
-
-        // Now continue the trend
-        replaceNumbers(s);
-    } else {
-        // Loop is over, no more word-numbers found
-        return;
-    }
+    // No value was found, return -1
+    return -1;
 }
